@@ -40,7 +40,7 @@ fn osu_string<'a>(p: &mut usize, buf: &'a Vec<u8>) -> &'a str {
 
 fn main() {
     let path = Path::new(
-        "/home/dani/code/rust/src/a3da6995a722f9a674a88f8892401e61-131472766186903799.osr",
+        "./test/a3da6995a722f9a674a88f8892401e61-131472766186903799.osr",
     );
     let display = path.display();
 
