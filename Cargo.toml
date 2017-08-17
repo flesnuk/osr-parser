@@ -1,0 +1,7 @@
+[package]
+name = "osr-parser"
+version = "0.1.0"
+authors = ["flesnuk <flesnuk@gmail.com>"]
+
+[dependencies]
+nom = "3.2.0"
