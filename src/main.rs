@@ -14,14 +14,6 @@ pub enum BeatmapMode {
 }
 
 impl BeatmapMode {
-    // fn as_str(&self) -> &'static str {
-    //     match *self {
-    //         BeatmapMode::Standard => "Standard",
-    //         BeatmapMode::Taiko => "Taiko",
-    //         BeatmapMode::CatchTheBeat => "Catch The Beat",
-    //         BeatmapMode::Mania => "Mania",
-    //     }
-    // }
     fn from_byte(b: u8) -> BeatmapMode {
         unsafe { ::std::mem::transmute(b) }
     }
@@ -69,36 +61,31 @@ fn read_byte(p: &mut usize, buf: &Vec<u8>) -> u8 {
 
 fn read_short(p: &mut usize, buf: &Vec<u8>) -> u16 {
     let mut short: u16 = (read_byte(p, buf)) as u16;
-    short = short | (((read_byte(p, buf)) as u16) << 8);
+    short |= ((read_byte(p, buf)) as u16) << 8;
     short
 }
 
 fn read_int(p: &mut usize, buf: &Vec<u8>) -> u32 {
     let mut int: u32 = (read_byte(p, buf)) as u32;
-    int = int | (((read_byte(p, buf)) as u32) << 8);
-    int = int | (((read_byte(p, buf)) as u32) << 16);
-    int = int | (((read_byte(p, buf)) as u32) << 24);
+    int |= ((read_byte(p, buf)) as u32) << 8;
+    int |= ((read_byte(p, buf)) as u32) << 16;
+    int |= ((read_byte(p, buf)) as u32) << 24;
     int
 }
 
 fn read_long(p: &mut usize, buf: &Vec<u8>) -> u64 {
     let mut long: u64 = (read_byte(p, buf)) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 8) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 16) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 24) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 32) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 40) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 48) as u64;
-    long = long | (((read_byte(p, buf)) as u64) << 56) as u64;
+    for i in 1..7 {
+        long |= ((read_byte(p, buf)) as u64) << (8 * i);
+    }
     long
 }
 
-fn leb128(p: &mut usize, buf: &Vec<u8>) -> usize {
+fn read_uleb128(p: &mut usize, buf: &Vec<u8>) -> usize {
     let mut result: usize = 0;
     let mut shift: u8 = 0;
     loop {
-        let byte = &buf[*p];
-        *p += 1;
+        let byte = read_byte(p, buf);
         result = result | ((byte & 0x7f) as usize) << shift;
         if byte & 0x80 == 0x00 {
             break;
@@ -108,13 +95,12 @@ fn leb128(p: &mut usize, buf: &Vec<u8>) -> usize {
     result
 }
 
-fn osu_string<'a>(p: &mut usize, buf: &'a Vec<u8>) -> &'a str {
+fn read_osu_string<'a>(p: &mut usize, buf: &'a Vec<u8>) -> &'a str {
     let mut start = *p;
     let mut end = *p;
-    let byte = &buf[*p];
-    *p += 1;
-    if *byte == 0x0b {
-        let length = leb128(p, buf);
+    let byte = read_byte(p, buf);
+    if byte == 0x0b {
+        let length = read_uleb128(p, buf);
         start = *p;
         end = start + length;
         *p = end;
@@ -131,9 +117,9 @@ fn read_replay<'a>(p: &mut usize, buf: &'a Vec<u8>) -> OsuReplay<'a> {
     OsuReplay {
         game_mode: BeatmapMode::from_byte(read_byte(p, buf)),
         game_version: read_int(p, buf),
-        beatmap_hash: osu_string(p, buf),
-        player_name: osu_string(p, buf),
-        replay_hash: osu_string(p, buf),
+        beatmap_hash: read_osu_string(p, buf),
+        player_name: read_osu_string(p, buf),
+        replay_hash: read_osu_string(p, buf),
         n300: read_short(p, buf),
         n100: read_short(p, buf),
         n50: read_short(p, buf),
@@ -151,27 +137,16 @@ fn main() {
     let path = Path::new(
         "./test/a3da6995a722f9a674a88f8892401e61-131472766186903799.osr",
     );
-    let display = path.display();
 
-    // Open the path in read-only mode, returns `io::Result<File>`
-    let mut file = match File::open(&path) {
-        // The `description` method of `io::Error` returns a string that
-        // describes the error
-        Err(why) => panic!("couldn't open {}: {}", display, why.description()),
-        Ok(file) => file,
-    };
+    let mut file = File::open(&path).expect("couldn't open osr file");
 
     let length = file.metadata().unwrap().len() as usize;
     let mut buf = vec![0; length];
-    let _ = file.read_exact(&mut buf);
+    let mut p = 0;
 
-    let mut p: usize = 0;
+    file.read_exact(&mut buf).expect("failed buffering");
 
-    //let mut buff = vec![0x0b, 4, 240, 159, 146, 150];
-
-    //println!("{}", osu_string(&mut p, &mut buff));
-
-    let replay = read_replay(&mut p, &mut buf);
+    let replay = read_replay(&mut p, &buf);
 
     println!("{:#?}", replay);
 }
