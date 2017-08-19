@@ -19,35 +19,35 @@ impl BeatmapMode {
 #[derive(Debug)]
 pub struct OsuReplay<'a> {
     ///Game mode of the replay
-    game_mode: BeatmapMode,
+    pub game_mode: BeatmapMode,
     ///Version of the game when the replay was created (ex. 20131216)
-    game_version: u32,
+    pub game_version: u32,
     ///osu! beatmap MD5 hash
-    beatmap_hash: &'a str,
+    pub beatmap_hash: &'a str,
     ///Player name
-    player_name: &'a str,
+    pub player_name: &'a str,
     ///osu! replay MD5 hash (includes certain properties of the replay)
-    replay_hash: &'a str,
+    pub replay_hash: &'a str,
     ///Number of 300s
-    n300: u16,
+    pub n300: u16,
     ///Number of 100s in standard, 150s in Taiko, 100s in CTB, 200s in mania
-    n100: u16,
+    pub n100: u16,
     ///Number of 50s in standard, small fruit in CTB, 50s in mania
-    n50: u16,
+    pub n50: u16,
     ///Number of Gekis in standard, Max 300s in mania
-    geki: u16,
+    pub geki: u16,
     ///Number of Katus in standard, 100s in mania
-    katu: u16,
+    pub katu: u16,
     ///Number of misses
-    misses: u16,
+    pub misses: u16,
     ///Total score displayed on the score report
-    score: u32,
+    pub score: u32,
     ///Greatest combo displayed on the score report
-    combo: u16,
+    pub combo: u16,
     ///Perfect/full combo (1 = no misses and no slider breaks and no early finished sliders)
-    perfect: u8,
+    pub perfect: u8,
     ///Mods used.
-    mods: u32,
+    pub mods: u32,
 }
 
 fn read_byte(p: &mut usize, buf: &Vec<u8>) -> u8 {
@@ -72,7 +72,7 @@ fn read_int(p: &mut usize, buf: &Vec<u8>) -> u32 {
 
 fn read_long(p: &mut usize, buf: &Vec<u8>) -> u64 {
     let mut long: u64 = (read_byte(p, buf)) as u64;
-    for i in 1..7 {
+    for i in 1..8 {
         long |= ((read_byte(p, buf)) as u64) << (8 * i);
     }
     long
@@ -83,7 +83,7 @@ fn read_uleb128(p: &mut usize, buf: &Vec<u8>) -> usize {
     let mut shift: u8 = 0;
     loop {
         let byte = read_byte(p, buf);
-        result = result | ((byte & 0x7f) as usize) << shift;
+        result |= ((byte & 0x7f) as usize) << shift;
         if byte & 0x80 == 0x00 {
             break;
         }
