@@ -5,3 +5,4 @@ authors = ["flesnuk <flesnuk@gmail.com>"]
 
 [dependencies]
 glob = "0.2.11"
+notify = "4.0.0"
